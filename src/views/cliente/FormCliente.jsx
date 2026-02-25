@@ -28,7 +28,7 @@ export default function FormCliente() {
                   <InputMask required mask="999.999.999-99" />
                 </Form.Input>
               </Form.Group>
-
+    
               <Form.Group>
                 <Form.Input fluid label="Fone Celular" width={6}>
                   <InputMask mask="(99) 9999.9999" />
