@@ -10,6 +10,7 @@ import {
   FormInput,
   Icon
 } from "semantic-ui-react";
+import MenuSistema from '../../MenuSistema';
 
 const opcoesUF = [
   { text: "PE", value: "PE" },
@@ -68,6 +69,7 @@ export default function FormProduto() {
 
   return (
     <div>
+      <MenuSistema tela={'entregador'} />
       <div style={{ marginTop: "3%" }}>
         <Container textAlign="justified">
           <h2>
