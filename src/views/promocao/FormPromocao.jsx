@@ -5,46 +5,58 @@ import { useLocation } from "react-router-dom";
 import { Button, Container, Divider, Form, Icon } from "semantic-ui-react";
 import MenuSistema from "../../MenuSistema";
 
-export default function FormProduto() {
-  const [codigo, setCodigo] = useState();
+export default function FormPromocao() {
   const [titulo, setTitulo] = useState();
-  const [descricao, setDescricao] = useState();
-  const [valorUnitario, setValorUnitario] = useState();
-  const [tempoEntregaMinimo, setTempoEntregaMinimo] = useState();
-  const [tempoEntregaMaximo, setTempoEntregaMaximo] = useState();
+  const [dataInicio, setDataInicio] = useState();
+  const [dataFim, setDataFim] = useState();
+  const [regra, setRegra] = useState();
+  const [valorDesconto, setValorDesconto] = useState();
+  const [promoValida, setPromoValida] = useState();
 
   const { state } = useLocation();
-  const [idProduto, setIdProduto] = useState();
+  const [idPromocao, setIdPromocao] = useState();
+
+  function formatarData(dataParam) {
+    if (dataParam === null || dataParam === "" || dataParam === undefined) {
+      return "";
+    }
+
+    let arrayData = dataParam.split("-");
+    return arrayData[2] + "/" + arrayData[1] + "/" + arrayData[0];
+  }
 
   function salvar() {
-    let produtoRequest = {
-      codigo: codigo,
+    let promocaoRequest = {
       titulo: titulo,
-      descricao: descricao,
-      valorUnitario: valorUnitario,
-      tempoEntregaMinimo: tempoEntregaMinimo,
-      tempoEntregaMaximo: tempoEntregaMaximo,
+      dataInicio: dataInicio,
+      dataFim: dataFim,
+      regra: regra,
+      valorDesconto: valorDesconto,
+      promoValida: true,
     };
 
-    if (idProduto != null) {
+    if (idPromocao != null) {
       //Alteração:
       axios
-        .put("http://localhost:8080/api/produto/" + idProduto, produtoRequest)
+        .put(
+          "http://localhost:8080/api/promocao/" + idPromocao,
+          promocaoRequest,
+        )
         .then(() => {
-          console.log("Produto alterado com sucesso.");
+          console.log("Promoção alterada com sucesso.");
         })
         .catch((error) => {
-          console.log("Erro ao alterar o produto.");
+          console.log("Erro ao alterar a promoção.");
         });
     } else {
       //Cadastro:
       axios
-        .post("http://localhost:8080/api/produto", produtoRequest)
+        .post("http://localhost:8080/api/promocao", promocaoRequest)
         .then((response) => {
-          console.log("Produto cadastrado com sucesso.");
+          console.log("Promoção cadastrada com sucesso.");
         })
         .catch((error) => {
-          console.log("Erro ao incluir o produto.");
+          console.log("Erro ao incluir a promoção.");
         });
     }
   }
@@ -52,41 +64,41 @@ export default function FormProduto() {
   useEffect(() => {
     if (state != null && state.id != null) {
       axios
-        .get("http://localhost:8080/api/produto/" + state.id)
+        .get("http://localhost:8080/api/promocao/" + state.id)
         .then((response) => {
-          setIdProduto(response.data.id);
-          setCodigo(response.data.codigo);
+          setIdPromocao(response.data.id);
           setTitulo(response.data.titulo);
-          setDescricao(response.data.descricao);
-          setValorUnitario(response.data.valorUnitario);
-          setTempoEntregaMinimo(response.data.tempoEntregaMinimo);
-          setTempoEntregaMaximo(response.data.tempoEntregaMaximo);
+          setDataInicio(formatarData(response.data.dataInicio));
+          setDataFim(formatarData(response.data.dataFim));
+          setRegra(response.data.regra);
+          setValorDesconto(response.data.valorDesconto);
+          setPromoValida(response.data.promoValida);
         });
     }
   }, [state]);
 
   return (
     <div>
-      <MenuSistema tela={"produto"} />
+      <MenuSistema tela={"promocao"} />
       <div style={{ marginTop: "3%" }}>
         <Container textAlign="justified">
-          {idProduto === undefined && (
+          {idPromocao === undefined && (
             <h2>
               {" "}
               <span style={{ color: "darkgray" }}>
                 {" "}
-                Produto &nbsp;
+                Promoção &nbsp;
                 <Icon name="angle double right" size="small" />{" "}
               </span>{" "}
               Cadastro
             </h2>
           )}
-          {idProduto != undefined && (
+          {idPromocao != undefined && (
             <h2>
               {" "}
               <span style={{ color: "darkgray" }}>
                 {" "}
-                Produto &nbsp;
+                Promoção &nbsp;
                 <Icon name="angle double right" size="small" />{" "}
               </span>{" "}
               Alteração
@@ -106,61 +118,52 @@ export default function FormProduto() {
                   width={14}
                 >
                   <InputMask
-                    placeholder="Informe o título do produto"
+                    placeholder="Informe o título da promoção"
                     value={titulo}
                     onChange={(e) => setTitulo(e.target.value)}
-                  />
-                </Form.Input>
-
-                <Form.Input required fluid label="Código do Produto" width={6}>
-                  <InputMask
-                    placeholder="Informe o código do produto"
-                    value={codigo}
-                    onChange={(e) => setCodigo(e.target.value)}
                   />
                 </Form.Input>
               </Form.Group>
 
               <Form.TextArea
-                label="Descrição"
-                placeholder="Informe a descrição do produto"
+                label="Regra"
                 tabIndex="4"
                 maxLength="100000"
-                value={descricao}
-                onChange={(e) => setDescricao(e.target.value)}
+                value={regra}
+                onChange={(e) => setRegra(e.target.value)}
               />
 
               <Form.Group>
                 <Form.Input
-                  required
                   fluid
-                  label="Valor Unitário"
+                  label="Valor Desconto (R$)"
                   width={8}
-                  value={valorUnitario}
-                  onChange={(e) => setValorUnitario(e.target.value)}
+                  value={valorDesconto}
+                  onChange={(e) => setValorDesconto(e.target.value)}
                 ></Form.Input>
 
-                <Form.Input
-                  fluid
-                  label="Tempo de Entrega Mínimo em Minutos"
-                  width={6}
-                >
+                <Form.Input 
+                    required 
+                    fluid 
+                    label="A partir de:" 
+                    width={6}>
                   <InputMask
-                    placeholder="30"
-                    value={tempoEntregaMinimo}
-                    onChange={(e) => setTempoEntregaMinimo(e.target.value)}
+                    placeholder="Ex: 08/04/2026"
+                    value={dataInicio}
+                    onChange={(e) => setDataInicio(e.target.value)}
                   />
                 </Form.Input>
 
                 <Form.Input
+                  required
                   fluid
-                  label="Tempo de Entrega Máximo em Minutos"
+                  label="Terminando em:"
                   width={6}
                 >
                   <InputMask
-                    placeholder="30"
-                    value={tempoEntregaMaximo}
-                    onChange={(e) => setTempoEntregaMaximo(e.target.value)}
+                    placeholder="Ex: 18/04/2026"
+                    value={dataFim}
+                    onChange={(e) => setDataFim(e.target.value)}
                   />
                 </Form.Input>
               </Form.Group>
