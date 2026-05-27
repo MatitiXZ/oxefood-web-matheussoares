@@ -2,8 +2,9 @@ import axios from "axios";
 import InputMask from "comigo-tech-react-input-mask";
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { Button, Container, Divider, Form, Icon } from "semantic-ui-react";
+import { Button, Container, Divider, Form, Icon, Image } from "semantic-ui-react";
 import MenuSistema from "../../MenuSistema";
+import { notifyError, notifySuccess } from "../../views/util/Util";
 
 export default function FormProduto() {
   const [codigo, setCodigo] = useState();
@@ -12,12 +13,17 @@ export default function FormProduto() {
   const [valorUnitario, setValorUnitario] = useState();
   const [tempoEntregaMinimo, setTempoEntregaMinimo] = useState();
   const [tempoEntregaMaximo, setTempoEntregaMaximo] = useState();
+  const [listaCategoria, setListaCategoria] = useState([]);
+  const [idCategoria, setIdCategoria] = useState();
+  const [imagem, setImagem] = useState(null);
+  const [preview, setPreview] = useState(null);
 
   const { state } = useLocation();
   const [idProduto, setIdProduto] = useState();
 
   function salvar() {
     let produtoRequest = {
+      idCategoria: idCategoria,
       codigo: codigo,
       titulo: titulo,
       descricao: descricao,
@@ -29,24 +35,44 @@ export default function FormProduto() {
     if (idProduto != null) {
       //Alteração:
       axios
-        .put("http://localhost:8080/api/produto/" + idProduto, produtoRequest)
+        .put("http://localhost:8080/api/Produto/" + idProduto, produtoRequest)
         .then(() => {
-          console.log("Produto alterado com sucesso.");
+          notifySuccess("Produto alterado com sucesso.");
+          atualizaImagem(idProduto);
         })
         .catch((error) => {
-          console.log("Erro ao alterar o produto.");
+          notifyError("Erro ao alterar o produto.");
         });
     } else {
       //Cadastro:
       axios
-        .post("http://localhost:8080/api/produto", produtoRequest)
+        .post("http://localhost:8080/api/Produto", produtoRequest)
         .then((response) => {
-          console.log("Produto cadastrado com sucesso.");
+          notifySuccess("Produto cadastrado com sucesso.");
+          atualizaImagem(response.data.id);
         })
         .catch((error) => {
-          console.log("Erro ao incluir o produto.");
+          notifyError("Erro ao cadastrar o produto.");
         });
     }
+  }
+
+  function atualizaImagem(idProduto) {
+    let formData = new FormData();
+    formData.append("imagem", imagem);
+
+    axios
+      .post("http://localhost:8080/api/produto/" + idProduto, formData)
+      .then((response) => {
+        notifySuccess("Imagem cadastrada com sucesso.");
+      })
+      .catch((error) => {
+        if (error.response) {
+          notifyError(error.response.data.errors[0].defaultMessage);
+        } else {
+          notifyError("Erro inesperado no sistema!");
+        }
+      });
   }
 
   useEffect(() => {
@@ -61,9 +87,35 @@ export default function FormProduto() {
           setValorUnitario(response.data.valorUnitario);
           setTempoEntregaMinimo(response.data.tempoEntregaMinimo);
           setTempoEntregaMaximo(response.data.tempoEntregaMaximo);
+          setIdCategoria(response.data.categoria.id);
+          setImagem(response.data.imagem);
         });
     }
+
+    axios.get("http://localhost:8080/api/CategoriaProduto").then((response) => {
+      const dropDownCategorias = response.data.map((c) => ({
+        text: c.descricao,
+        value: c.id,
+      }));
+      setListaCategoria(dropDownCategorias);
+    });
   }, [state]);
+
+  const handleImagemChange = (event) => {
+    const file = event.target.files[0];
+    setImagem(file);
+
+    // Gera uma URL para visualização da imagem
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setPreview(null);
+    }
+  };
 
   return (
     <div>
@@ -97,6 +149,31 @@ export default function FormProduto() {
 
           <div style={{ marginTop: "4%" }}>
             <Form>
+              <Form.Input
+                label="Imagem do Produto"
+                type="file"
+                accept="image/*"
+                onChange={handleImagemChange}
+              />
+
+              {preview && (
+                <Image
+                  src={preview}
+                  size="small"
+                  bordered
+                  style={{ marginTop: "1em" }}
+                />
+              )}
+              {!preview && imagem && (
+                <Image
+                  src={`imagens_cadastradas/${imagem}`}
+                  bordered
+                  style={{ marginTop: "1em" }}
+                />
+              )}
+
+              <br />
+
               <Form.Group widths="equal">
                 <Form.Input
                   required
@@ -107,7 +184,7 @@ export default function FormProduto() {
                 >
                   <InputMask
                     placeholder="Informe o título do produto"
-                    value={titulo}
+                    value={titulo || ''}
                     onChange={(e) => setTitulo(e.target.value)}
                   />
                 </Form.Input>
@@ -115,18 +192,31 @@ export default function FormProduto() {
                 <Form.Input required fluid label="Código do Produto" width={6}>
                   <InputMask
                     placeholder="Informe o código do produto"
-                    value={codigo}
+                    value={codigo || ''}
                     onChange={(e) => setCodigo(e.target.value)}
                   />
                 </Form.Input>
               </Form.Group>
+
+              <Form.Select
+                required
+                fluid
+                tabIndex="3"
+                placeholder="Selecione"
+                label="Categoria"
+                options={listaCategoria}
+                value={idCategoria}
+                onChange={(e, { value }) => {
+                  setIdCategoria(value);
+                }}
+              />
 
               <Form.TextArea
                 label="Descrição"
                 placeholder="Informe a descrição do produto"
                 tabIndex="4"
                 maxLength="100000"
-                value={descricao}
+                value={descricao || ''}
                 onChange={(e) => setDescricao(e.target.value)}
               />
 
@@ -136,7 +226,7 @@ export default function FormProduto() {
                   fluid
                   label="Valor Unitário"
                   width={8}
-                  value={valorUnitario}
+                  value={valorUnitario || ''}
                   onChange={(e) => setValorUnitario(e.target.value)}
                 ></Form.Input>
 
@@ -147,7 +237,7 @@ export default function FormProduto() {
                 >
                   <InputMask
                     placeholder="30"
-                    value={tempoEntregaMinimo}
+                    value={tempoEntregaMinimo || ''}
                     onChange={(e) => setTempoEntregaMinimo(e.target.value)}
                   />
                 </Form.Input>
@@ -159,7 +249,7 @@ export default function FormProduto() {
                 >
                   <InputMask
                     placeholder="30"
-                    value={tempoEntregaMaximo}
+                    value={tempoEntregaMaximo || ''}
                     onChange={(e) => setTempoEntregaMaximo(e.target.value)}
                   />
                 </Form.Input>

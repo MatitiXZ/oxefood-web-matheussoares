@@ -12,6 +12,7 @@ import {
   Icon,
 } from "semantic-ui-react";
 import MenuSistema from "../../MenuSistema";
+import { notifyError, notifySuccess } from '../../views/util/Util';
 
 const opcoesUF = [
   { text: "PE", value: "PE" },
@@ -77,20 +78,20 @@ export default function FormProduto() {
           EntregadorRequest,
         )
         .then((response) => {
-          console.log("Entregador alterado com sucesso.");
+          notifySuccess('Entregador alterado com sucesso.')
         })
         .catch((error) => {
-          console.log("Erro ao alterar o entregador.");
+          notifyError("Erro ao alterar o entregador.")
         });
     } else {
       //Cadastro:
       axios
         .post("http://localhost:8080/api/entregador", EntregadorRequest)
         .then((response) => {
-          console.log("Entregador cadastrado com sucesso.");
+          notifySuccess('Entregador cadastrado com sucesso.')
         })
         .catch((error) => {
-          console.log("Erro ao incluir o entregador.");
+          notifyError("Erro ao cadastrar o entregador.")
         });
     }
   }
